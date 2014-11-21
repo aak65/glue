@@ -193,6 +193,18 @@ def test_csv_pandas_factory():
     assert isinstance(d.get_component(cat_comp), CategoricalComponent)
 
 
+def test_pyvcf_factory():
+    path = '/Users/Alex/Desktop/test.vcf'
+    d = df.load_data(path, factory=df.pyvcf_read_vcf)
+    #cat_SAMPLE = d.find_component_id('SAMPLE')
+    #assert isinstance(d.get_component(cat_SAMPLE), CategoricalComponent)
+    cat_CHROM = d.find_component_id('CHROM')
+    assert isinstance(d.get_component(cat_CHROM), CategoricalComponent)
+    cat_REF = d.find_component_id('REF')
+    assert isinstance(d.get_component(cat_REF), CategoricalComponent)
+    cat_ALT = d.find_component_id('ALT')
+    assert isinstance(d.get_component(cat_ALT), CategoricalComponent)
+
 def test_dtype_int():
     data = b'# a, b\n1, 1 \n2, 2 \n3, 3'
     with make_file(data, '.csv') as fname:

@@ -658,6 +658,155 @@ pandas_read_table.identifier = has_extension('csv csv txt tsv tbl dat')
 __factories__.append(pandas_read_table)
 
 
+def pyvcf_process(indf):
+    '''
+    Build a data set from vcf file format.
+    '''
+
+    try:
+        import vcf
+    except ImportError:
+        raise ImportError('PyVCF is required for VCF input.')
+
+    result = Data()
+
+    SAMPLE = []
+    CHROM = []
+    POS = []
+    REF = []
+    ALT = []
+
+    formats = indf.formats
+    format_column_names = []
+    format_column_keys = []
+    format_column_ns = []
+    for f in formats:
+        format_column_names.append(formats[f].desc)
+        format_column_keys.append(formats[f].id)
+        format_column_ns.append(formats[f].num)
+    format_len = format_column_keys.__len__()
+    format_column_values = [[] for i in range(format_len)]
+
+    infos = indf.infos
+    info_column_names = []
+    info_column_keys = []
+    info_column_ns = []
+    for i in infos:
+        info_column_names.append(infos[i].desc)
+        info_column_keys.append(infos[i].id)
+        info_column_ns.append(infos[i].num)
+    info_len = info_column_keys.__len__()
+    info_column_values = [[] for i in range(info_len)]
+
+    for rec in indf:
+        for sample in rec.samples:
+            altcount = 0
+            len_alt = rec.ALT.__len__()
+            for alt in rec.ALT:
+                if isinstance(alt, vcf.model._Substitution):
+                    SAMPLE.append(sample.sample)
+                    CHROM.append(rec.CHROM)
+                    POS.append(rec.POS)
+                    REF.append(rec.REF)
+                    ALT.append(alt)
+
+                    altcount += 1
+                    i = 0
+                    for ic in info_column_values:
+                        if info_column_ns[i] is 0:
+                            if info_column_keys[i] in rec.INFO.keys():
+                                ic.append(1)
+                            else:
+                                ic.append(0)
+                        elif info_column_ns[i] is -1:
+                            if info_column_keys[i] in rec.INFO.keys():
+                                ic.append(rec.INFO[info_column_keys[i]][altcount-1])
+                            else:
+                                ic.append('')
+                        else:
+                            if info_column_keys[i] in rec.INFO.keys():
+                                ic.append(rec.INFO[info_column_keys[i]])
+                            else:
+                                ic.append('')
+                        i += 1
+
+
+                    i = 0
+                    for ic in format_column_values:
+                        if sample[format_column_keys[i]]:
+                            if format_column_ns[i] is -2:
+                                len_list = sample[format_column_keys[i]].__len__()
+                                len_set = len_list/len_alt
+                                sl1 = int(altcount*len_set - len_set)
+                                sl2 = int(altcount*len_set)
+                                ic.append(sample[format_column_keys[i]][sl1:sl2])
+                            elif info_column_ns[i] is -1:
+                                ic.append(sample[format_column_keys[i]][altcount-1])
+                            else:
+                                ic.append(sample[format_column_keys[i]])
+                        else:
+                            ic.append('')
+                        i += 1
+
+    result.add_component(CategoricalComponent(SAMPLE), 'Sample')
+    result.add_component(CategoricalComponent(CHROM), 'CHROM')
+    result.add_component(POS, 'POS')
+    result.add_component(CategoricalComponent(REF), 'REF')
+    result.add_component(CategoricalComponent(ALT), 'ALT')
+
+    i = 0
+    for ic in format_column_names:
+        if isinstance(format_column_values[i][0], list):
+            len_list = format_column_values[i][0].__len__()
+            for ii in range(0, len_list):
+                new_name = ic + ' ' + str(ii)
+                new_list = []
+                for l in format_column_values[i]:
+                    new_list.append(l[ii])
+                result.add_component(new_list, new_name)
+        else:
+            result.add_component(CategoricalComponent(format_column_values[i]), ic)
+        i += 1
+
+    i = 0
+    for ic in info_column_names:
+        if isinstance(info_column_values[i][0], list):
+            len_list = info_column_values[i][0].__len__()
+            if len_list > 1:
+                for ii in range(0, len_list):
+                    new_name = ic + ' ' + str(ii)
+                    new_list = []
+                    for l in info_column_values[i]:
+                        new_list.append(l[ii])
+                    result.add_component(new_list, new_name)
+        else:
+            result.add_component(CategoricalComponent(info_column_values[i]), ic)
+        i += 1
+
+    return result
+
+
+def pyvcf_read_vcf(path, **kwargs):
+    """ A factory for reading Variant Call Format (vcf) using PyVCF.
+    :param path: path/to/file
+    :param kwargs:All other kwargs are passed to
+    :return: core.data.Data object.
+    """
+    try:
+        import vcf
+    except ImportError:
+        raise ImportError('PyVCF is required for VCF input.')
+
+    indf = vcf.Reader(open(path, 'r'), **kwargs)
+    return pyvcf_process(indf)
+
+pyvcf_read_vcf.label = "VCF"
+pyvcf_read_vcf.identifier = has_extension('vcf VCF')
+__factories__.append(pyvcf_read_vcf)
+set_default_factory('vcf', pyvcf_read_vcf)
+set_default_factory('VCF', pyvcf_read_vcf)
+
+
 img_fmt = ['jpg', 'jpeg', 'bmp', 'png', 'tiff', 'tif']
 
 
@@ -734,3 +883,4 @@ try:
     load_dendro.identifier = has_extension('fits hdf5 h5')
 except ImportError:
     pass
+
