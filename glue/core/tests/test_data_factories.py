@@ -194,7 +194,7 @@ def test_csv_pandas_factory():
 
 
 def test_pyvcf_factory():
-    path = '/Users/Alex/Desktop/test.vcf'
+    path = '/Users/Alex/Desktop/short.vcf'
     d = df.load_data(path, factory=df.pyvcf_read_vcf)
     #cat_SAMPLE = d.find_component_id('SAMPLE')
     #assert isinstance(d.get_component(cat_SAMPLE), CategoricalComponent)

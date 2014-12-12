@@ -668,6 +668,7 @@ def pyvcf_read_vcf(path, **kwargs):
     """
 
     import csv
+    import re
 
     with open(path) as handle:
         fields = None
@@ -683,7 +684,7 @@ def pyvcf_read_vcf(path, **kwargs):
             calls = [row['REF']] + row['ALT'].split(',')
             fmt_fields = row['FORMAT'].split(':')
             for sample in sample_cols:
-                sample_info = row[sample].split('/')
+                sample_info = re.split('[/|]', row[sample])
                 genotype_info = {(fmt, val) for fmt, val in zip(fmt_fields, sample_info)}
                 for anum, call_num in enumerate(genotype_info['GT']):
                     if call_num != '.':
