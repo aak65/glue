@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 from functools import partial
 
 import numpy as np
+from matplotlib.dates import num2date
 
 from ..core.client import Client
 from ..core.data import Data, IncompatibleAttribute, ComponentID, CategoricalComponent
@@ -117,7 +118,7 @@ class ScatterClient(Client):
         data = layer.data
         comp = data.components if show_hidden else data.visible_components
         return [c for c in comp if
-                data.get_component(c).numeric]
+                data.get_component(c).numeric or data.get_component(c).datetime]
 
     def add_layer(self, layer):
         """ Adds a new visual layer to a client, to display either a dataset
@@ -257,19 +258,33 @@ class ScatterClient(Client):
 
         if isinstance(roi, RangeROI):
             lo, hi = roi.range()
-            att = self.xatt if roi.ori == 'x' else self.yatt
+            if roi.ori == 'x':
+                att = self.xatt
+                is_date = self._check_if_date(self.xatt)
+            else:
+                att = self.yatt
+                is_date = self._check_if_date(self.yatt)
+            if is_date:
+                lo = np.datetime64(num2date(lo))
+                hi = np.datetime64(num2date(hi))
+
             subset_state = RangeSubsetState(lo, hi, att)
         else:
             subset_state = RoiSubsetState()
             subset_state.xatt = self.xatt
             subset_state.yatt = self.yatt
             x, y = roi.to_polygon()
+            if self._check_if_date(self.xatt):
+                x = np.array(list(np.datetime64(num2date(d)) for d in x))
+            if self._check_if_date(self.yatt):
+                y = np.array(list(np.datetime64(num2date(d)) for d in y))
             subset_state.roi = PolygonalROI(x, y)
 
         mode = EditSubsetMode()
         visible = [d for d in self._data if self.is_visible(d)]
         focus = visible[0] if len(visible) > 0 else None
         mode.update(self._data, subset_state, focus_data=focus)
+        self._update_axis_labels()
 
     def _set_xlog(self, state):
         """ Set the x axis scaling
@@ -402,6 +417,19 @@ class ScatterClient(Client):
             try:
                 comp = data.get_component(attribute)
                 if isinstance(comp, CategoricalComponent):
+                    return True
+            except IncompatibleAttribute:
+                pass
+        return False
+
+    def _check_if_date(self, attribute):
+        """ A function to check if an attribute has date formatted information.
+        :param attribute: core.Data.ComponentID
+        :return: True iff Data is Date
+        """
+        for data in self._data:
+            try:
+                if data.get_component(attribute).datetime:
                     return True
             except IncompatibleAttribute:
                 pass

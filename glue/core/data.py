@@ -217,6 +217,13 @@ class Component(object):
         """
         return np.can_cast(self.data[0], np.complex)
 
+    @property
+    def datetime(self):
+        """
+        Whether or not the datatype is date
+        """
+        return isinstance(self.data.dtype, np.datetime64) or 'datetime64' in str(self.data.dtype)
+
     def __str__(self):
         return "Component with shape %s" % shape_to_string(self.shape)
 

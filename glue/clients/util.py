@@ -3,9 +3,12 @@ from __future__ import absolute_import, division, print_function
 from functools import partial
 
 import numpy as np
+import pandas as pd
+import datetime
 from matplotlib.ticker import AutoLocator, MaxNLocator, LogLocator
 from matplotlib.ticker import (LogFormatterMathtext, ScalarFormatter,
                                FuncFormatter)
+from matplotlib.dates import date2num, AutoDateLocator, AutoDateFormatter
 from ..core.data import CategoricalComponent
 
 
@@ -57,13 +60,21 @@ def visible_limits(artists, axis):
     if data.size == 0:
         return
 
-    data = data[np.isfinite(data)]
-    if data.size == 0:
-        return
+    if isinstance(data[0], (np.datetime64, datetime.date)) \
+            or 'datetime64' in str(type(data[0])):
+        data = pd.to_datetime(data)
+        dt = data[pd.notnull(data)]
+        if len(dt) == 0:
+            return
+        lo, hi = date2num(min(data)), date2num(max(data))
+    else:
+        data = data[np.isfinite(data)]
+        if data.size == 0:
+            return
 
-    lo, hi = np.nanmin(data), np.nanmax(data)
-    if not np.isfinite(lo):
-        return
+        lo, hi = np.nanmin(data), np.nanmax(data)
+        if not np.isfinite(lo):
+            return
 
     return lo, hi
 
@@ -95,6 +106,7 @@ def update_ticks(axes, coord, components, is_log):
         raise TypeError("coord must be one of x,y")
 
     is_cat = all(isinstance(comp, CategoricalComponent) for comp in components)
+    is_date = all(comp.datetime for comp in components)
     if is_log:
         axis.set_major_locator(LogLocator())
         axis.set_major_formatter(LogFormatterMathtext())
@@ -110,6 +122,15 @@ def update_ticks(axes, coord, components, is_log):
         axis.set_major_locator(locator)
         axis.set_major_formatter(formatter)
         return all_categories.shape[0]
+    elif is_date:
+        locator = AutoDateLocator()
+        formatter = AutoDateFormatter(locator)
+        axis.set_major_locator(locator)
+        axis.set_major_formatter(formatter)
+        if coord == 'x':
+            axes.xaxis_date()
+        elif coord == 'y':
+            axes.yaxis_date()
     else:
         axis.set_major_locator(AutoLocator())
         axis.set_major_formatter(ScalarFormatter())

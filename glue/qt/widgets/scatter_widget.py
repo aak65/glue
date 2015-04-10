@@ -11,9 +11,9 @@ from ..mouse_mode import (RectangleMode, CircleMode,
 
 from .data_viewer import DataViewer
 from .mpl_widget import MplWidget, defer_draw
-from ..widget_properties import (ButtonProperty, FloatLineProperty,
+from ..widget_properties import (ButtonProperty, DateLineProperty,
                                  CurrentComboProperty,
-                                 connect_bool_button, connect_float_edit)
+                                 connect_bool_button, connect_date_edit)
 
 from ..qtutil import load_ui, cache_axes, nonpartial
 
@@ -36,10 +36,10 @@ class ScatterWidget(DataViewer):
     ylog = ButtonProperty('ui.yLogCheckBox', 'log scaling on y axis?')
     xflip = ButtonProperty('ui.xFlipCheckBox', 'invert the x axis?')
     yflip = ButtonProperty('ui.yFlipCheckBox', 'invert the y axis?')
-    xmin = FloatLineProperty('ui.xmin', 'Lower x limit of plot')
-    xmax = FloatLineProperty('ui.xmax', 'Upper x limit of plot')
-    ymin = FloatLineProperty('ui.ymin', 'Lower y limit of plot')
-    ymax = FloatLineProperty('ui.ymax', 'Upper y limit of plot')
+    xmin = DateLineProperty('ui.xmin', 'Lower x limit of plot')
+    xmax = DateLineProperty('ui.xmax', 'Upper x limit of plot')
+    ymin = DateLineProperty('ui.ymin', 'Lower y limit of plot')
+    ymax = DateLineProperty('ui.ymax', 'Upper y limit of plot')
     hidden = ButtonProperty('ui.hidden_attributes', 'Show hidden attributes')
     xatt = CurrentComboProperty('ui.xAxisComboBox',
                                 'Attribute to plot on x axis')
@@ -90,10 +90,10 @@ class ScatterWidget(DataViewer):
         ui.swapAxes.clicked.connect(nonpartial(self.swap_axes))
         ui.snapLimits.clicked.connect(cl.snap)
 
-        connect_float_edit(cl, 'xmin', ui.xmin)
-        connect_float_edit(cl, 'xmax', ui.xmax)
-        connect_float_edit(cl, 'ymin', ui.ymin)
-        connect_float_edit(cl, 'ymax', ui.ymax)
+        connect_date_edit(cl, 'xmin', ui.xmin)
+        connect_date_edit(cl, 'xmax', ui.xmax)
+        connect_date_edit(cl, 'ymin', ui.ymin)
+        connect_date_edit(cl, 'ymax', ui.ymax)
 
     def make_toolbar(self):
         result = GlueToolbar(self.central_widget.canvas, self,
