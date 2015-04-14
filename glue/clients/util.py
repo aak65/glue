@@ -63,9 +63,6 @@ def visible_limits(artists, axis):
     if isinstance(data[0], (np.datetime64, datetime.date)) \
             or 'datetime64' in str(type(data[0])):
         data = pd.to_datetime(data)
-        dt = data[pd.notnull(data)]
-        if len(dt) == 0:
-            return
         lo, hi = date2num(min(data)), date2num(max(data))
     else:
         data = data[np.isfinite(data)]

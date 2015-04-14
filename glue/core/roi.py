@@ -1,9 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-import pandas as pd
+from pandas import to_datetime
 import datetime
-import matplotlib.dates as mdate
+from matplotlib.dates import date2num
 from matplotlib.patches import Polygon, Rectangle, Ellipse, PathPatch
 from matplotlib.patches import Path as mplPath
 from matplotlib.transforms import IdentityTransform, blended_transform_factory
@@ -498,16 +498,20 @@ class PolygonalROI(VertexROIBase):
             y = np.asarray(y)
 
         if isinstance(x[0], np.datetime64)\
-                or 'datetime64' in str(type(x[0]))\
-                or isinstance(x[0], datetime.date):
-            x = pd.to_datetime(x)
-            x = mdate.date2num(x)
-            vx = pd.to_datetime(self.vx)
-            vx = mdate.date2num(vx)
+                or 'datetime64' in str(type(x[0])):
+            x = date2num(to_datetime(x))
+            vx = date2num(to_datetime(self.vx))
         else:
             vx = self.vx
+        if isinstance(y[0], np.datetime64)\
+                or 'datetime64' in str(type(y[0])):
+            y = date2num(to_datetime(y))
+            vy = date2num(to_datetime(self.vy))
+        else:
+            vy = self.vy
+
         xypts = np.column_stack((x.flat, y.flat))
-        xyvts = np.column_stack((vx, self.vy))
+        xyvts = np.column_stack((vx, vy))
         result = points_inside_poly(xypts, xyvts)
         good = np.isfinite(xypts).all(axis=1)
         result[~good] = False
