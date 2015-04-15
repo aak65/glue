@@ -155,9 +155,9 @@ class DateLineProperty(WidgetProperty):
                     if p in ['PM pm']:
                         rest[0] += 12
                 [h, m, s, ms] = rest[:]
-                return float(date2num(dt.datetime(int(y), int(mo), int(d), h, m, s, ms)))
+                return date2num(dt.datetime(int(y), int(mo), int(d), h, m, s, ms))
             except ValueError:
-                return float(date2num(dt.date(1970, 1, 1)))
+                return date2num(dt.date(1970, 1, 1))
 
     def setter(self, widget, value):
         widget.setText(pretty_number(value))
@@ -237,10 +237,16 @@ def connect_date_edit(client, prop, widget):
     client.prop should be a callback property
     """
     v = QtGui.QRegExpValidator(None)
-    rx = QtCore.QRegExp('((((0?\d)|1[0-2])?/((0?\d)|[12]\d|3[01])?/\d{0,4})' +
-                        '((\s((0?\d)|1\d|2[0-4])?(:((0?\d)|[1-5]\d)?' +
-                        '(:((0?\d)|[1-5]\d)(:(\d{1,6}|1000000)?)?)?)?((\s([aApP][mM])$)|$))|$)' +
-                        ')|([\-\+]?\d+(\.\d{1,3})?($|(e[\-\+]?\d{1,3})?$))')
+    rx = QtCore.QRegExp('((((0?\d)|1[0-2])?' +          # Month
+                        '/((0?\d)|[12]\d|3[01])?' +     # Day
+                        '/\d{0,4})' +                   # Year
+                        '((\s((0?\d)|1\d|2[0-4])?' +    # Hour
+                        '(:((0?\d)|[1-5]\d)?' +         # Minute
+                        '(:((0?\d)|[1-5]\d)' +          # Second
+                        '(:(\d{1,6}|1000000)?)?)?)?' +  # Millisecond
+                        '((\s([aApP][mM])$)|$))|$))' +  # am / pm
+                        '|([\-\+]?\d+(\.\d{1,3})?' +    # Number (decimal)
+                        '($|(e[\-\+]?\d{1,3})?$))')     # Scientific Notation
     v.setRegExp(rx)
     widget.setValidator(v)
 
@@ -264,9 +270,9 @@ def connect_date_edit(client, prop, widget):
                 if str(flds[-1]) in ['PM', 'pm'] and rest[0] < 12:
                         rest[0] += 12
                 [h, m, s, ms] = rest[:]
-                setattr(client, prop, float(date2num(dt.datetime(int(y), int(mo), int(d), h, m, s, ms))))
+                setattr(client, prop, date2num(dt.datetime(int(y), int(mo), int(d), h, m, s, ms)))
             except ValueError:
-                setattr(client, prop, float(date2num(dt.date(1970, 1, 1))))
+                setattr(client, prop, date2num(dt.date(1970, 1, 1)))
 
     def update_widget(val):
 
