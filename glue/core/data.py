@@ -222,7 +222,8 @@ class Component(object):
         """
         Whether or not the datatype is date
         """
-        return isinstance(self.data.dtype, np.datetime64) or 'datetime64' in str(self.data.dtype)
+        return isinstance(self.data.dtype, np.datetime64)\
+               or 'datetime64' in str(self.data.dtype)
 
     def group(self):
         """
