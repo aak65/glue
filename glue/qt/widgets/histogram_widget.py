@@ -48,16 +48,22 @@ class HistogramWidget(DataViewer):
         self.central_widget = MplWidget()
         self.setCentralWidget(self.central_widget)
         self.option_widget = QtGui.QWidget()
-        self.ui = load_ui('histogramwidget', self.option_widget)
         self._tweak_geometry()
-        self.client = HistogramClient(self._data,
-                                      self.central_widget.canvas.fig,
-                                      artist_container=self._container)
+        self._load_ui()
+        self._setup_client()
         self._init_limits()
         self.make_toolbar()
         self._connect()
         # maps _hash(componentID) -> componentID
         self._component_hashes = {}
+
+    def _load_ui(self):
+        self.ui = load_ui('histogramwidget', self.option_widget)
+
+    def _setup_client(self):
+        self.client = HistogramClient(self._data,
+                                      self.central_widget.canvas.fig,
+                                      artist_container=self._container)
 
     @staticmethod
     def _get_default_tools():

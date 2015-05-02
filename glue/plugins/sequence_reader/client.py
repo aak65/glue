@@ -7,7 +7,7 @@ from ...external import six
 from ...core.data import IncompatibleAttribute, CategoricalComponent
 from ...core.subset import RangeSubsetState
 from ...core.edit_subset_mode import EditSubsetMode
-from ..core.callback_property import (CallbackProperty, add_callback,
+from ...core.callback_property import (CallbackProperty, add_callback,
                                       delay_callback)
 
 from ...clients.histogram_client import HistogramClient, UpdateProperty
@@ -84,7 +84,7 @@ class SeqClient(HistogramClient):
         add_callback(self, 'chrom', partial(self.set_component, self._component, 'c'))
         add_callback(self, 'idn', partial(self.set_component, self._component, 'i'))
 
-    def set_component(self, component, combo):
+    def set_component(self, component, coord, *args):
         """
         Redefine which component gets plotted
 

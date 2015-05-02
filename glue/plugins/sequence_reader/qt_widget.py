@@ -40,12 +40,8 @@ class SeqWidget(HistogramWidget):
 
     def _connect(self):
         ui = self.ui
-        ui.chromCombo.currentIndexChanged.connect(
-            partial(self._set_attribute_from_combo, 'c'))
-        ui.idnCombo.currentIndexChanged.connect(
-            partial(self._set_attribute_from_combo, 'i'))
-        ui.chromCombo.currentIndexChanged.connect(
-            self._update_minmax_labels)
+        ui.chromCombo.currentIndexChanged.connect(self._update_chrom)
+        ui.idnCombo.currentIndexChanged.connect(self._update_idn)
         super(SeqWidget, self)._connect()
 
     @defer_draw
@@ -56,6 +52,8 @@ class SeqWidget(HistogramWidget):
         idn = self.ui.idnCombo
         component = self.component
         new_pos = self.client.component or component
+        new_chrom = self.chromosome
+        new_idn = self.sample
 
         combo.blockSignals(True)
         combo.clear()
@@ -71,7 +69,9 @@ class SeqWidget(HistogramWidget):
         chr_model = QtGui.QStandardItemModel()
         idn_model = QtGui.QStandardItemModel()
 
-        found = False
+        found_pos = False
+        found_chrom = False
+        found_idn = False
         for d in self._data:
             if d not in self._container:
                 continue
@@ -84,17 +84,21 @@ class SeqWidget(HistogramWidget):
                 if not d.get_component(c).numeric:
                     continue
                 if c is new_pos:
-                    found = True
+                    found_pos = True
                 if c.label in ['CHROM', 'chromosome', 'chr', 'CHR',
-                               'CHROMOSOME', 'chrom', 'Chromosome']:
+                               'CHROMOSOME', 'chrom', 'Chromosome', 'Chrom']:
                     for chr in d.get_component(c)._categories:
+                        if chr is new_chrom:
+                            found_chrom = True
                         itemc = QtGui.QStandardItem(chr)
-                        itemc.setData(_hash(c), role=Qt.UserRole)
+                        item.setData(_hash(c), role=Qt.UserRole)
                         chr_model.appendRow(itemc)
-                if c.label in ['Patient', 'patient', 'PATIENT']:
-                    for idn in d.get_component(c)._categories:
-                        itemi = QtGui.QStandardItem(idn)
-                        itemi.setData(_hash(c), role=Qt.UserRole)
+                if c.label in ['Patient', 'patient', 'PATIENT',
+                               'Sample', 'sample', 'SAMPLE']:
+                    for ids in d.get_component(c)._categories:
+                        if idn is new_idn:
+                            found_idn = True
+                        itemi = QtGui.QStandardItem(ids)
                         idn_model.appendRow(itemi)
                 item = QtGui.QStandardItem(c.label)
                 item.setData(_hash(c), role=Qt.UserRole)
@@ -112,11 +116,23 @@ class SeqWidget(HistogramWidget):
         chrom.blockSignals(False)
         idn.blockSignals(False)
 
-        if found:
+        if found_pos:
             self.component = new_pos
         else:
             combo.setCurrentIndex(2)  # skip first data + separator
         self._set_attribute_from_combo()
+
+        if found_chrom:
+            self.component = new_chrom
+        else:
+            combo.setCurrentIndex(1)  # skip first data + separator
+        self._update_chrom()
+
+        if found_idn:
+            self.component = new_idn
+        else:
+            combo.setCurrentIndex(1)  # skip first data + separator
+        self._update_idn()
 
     @property
     def chromosome(self):
@@ -127,13 +143,26 @@ class SeqWidget(HistogramWidget):
     @property
     def sample(self):
         combo = self.ui.idnCombo
+        print(combo)
+        print(dir(combo))
         index = combo.currentIndex()
-        return self._component_hashes.get(combo.itemData(index), None)
+        print(index)
+        return combo.itemData(index).label
 
     @defer_draw
     def _set_attribute_from_combo(self, *args):
-        self.client.set_component(self.component, *args)
+        self.client.set_component(self.component, 'p')
         self.update_window_title()
+
+    @defer_draw
+    def _update_chrom(self, *args):
+        sele = self.chrom
+        self.client.chrom = sele
+
+    @defer_draw
+    def _update_idn(self, *args):
+        sele = self.idn
+        self.client.idn = sele
 
     @defer_draw
     def add_data(self, data):
