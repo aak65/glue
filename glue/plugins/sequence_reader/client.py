@@ -63,7 +63,7 @@ class SeqLayerArtist(HistogramLayerArtist, SeqLayerBase):
         else:
             rng = self.lo, self.hi
 
-        to_patch = [x for i, x in enumerate(data) if chr[i] == 1 and idn[i] == 1]
+        # to_patch = [x for i, x in enumerate(data) if chr[i] == 1 and idn[i] == 1]
         nbinpatch = self._axes.hist(to_patch,
                                     bins=self.nbins,
                                     range=rng)

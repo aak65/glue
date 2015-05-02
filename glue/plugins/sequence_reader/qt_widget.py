@@ -52,8 +52,8 @@ class SeqWidget(HistogramWidget):
         idn = self.ui.idnCombo
         component = self.component
         new_pos = self.client.component or component
-        new_chrom = self.chromosome
-        new_idn = self.sample
+        new_chrom = chrom
+        new_idn = idn
 
         combo.blockSignals(True)
         combo.clear()
