@@ -46,6 +46,8 @@ class HistogramClient(Client):
     """
     A client class to display histograms
     """
+    layer_artist_class = HistogramLayerArtist
+
     normed = UpdateProperty(False)
     cumulative = UpdateProperty(False)
     autoscale = UpdateProperty(True)
@@ -62,10 +64,15 @@ class HistogramClient(Client):
         self._saved_nbins = None
         self._xlim = {}
 
+        self._connect()
+
         try:
             self._axes.figure.set_tight_layout(True)
         except AttributeError:  # pragma: nocover (matplotlib < 1.1)
             pass
+
+    def _connect(self):
+        pass
 
     @property
     def bins(self):
@@ -74,7 +81,7 @@ class HistogramClient(Client):
         Returns None if no histogram has been computed yet.
         """
         for art in self._artists:
-            if not isinstance(art, HistogramLayerArtist):
+            if not isinstance(art, self.layer_artist_class):
                 continue
             return art.x
 
@@ -134,7 +141,7 @@ class HistogramClient(Client):
         if self.layer_present(layer):
             return self._artists[layer][0]
 
-        art = HistogramLayerArtist(layer, self._axes)
+        art = self.layer_artist_class(layer, self._axes)
         self._artists.append(art)
 
         self._ensure_subsets_present(layer)
@@ -419,7 +426,7 @@ class HistogramClient(Client):
     def restore_layers(self, layers, context):
         for layer in layers:
             lcls = lookup_class(layer.pop('_type'))
-            if lcls != HistogramLayerArtist:
+            if lcls != self.layer_artist_class:
                 raise ValueError("Cannot restore layers of type %s" % lcls)
             data_or_subset = context.object(layer.pop('layer'))
             result = self.add_layer(data_or_subset)
